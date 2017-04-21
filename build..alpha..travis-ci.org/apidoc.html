@@ -1,0 +1,299 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/graniteds/jsonr"
+
+    >jsonr (v1.0.0)</a>
+</h1>
+<h4>JsonR is a JSON implementation that deals with multiple / circular references</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.jsonr">module jsonr</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.jsonr.isReference">
+            function <span class="apidocSignatureSpan">jsonr.</span>isReference
+            <span class="apidocSignatureSpan">(value)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.jsonr.parse">
+            function <span class="apidocSignatureSpan">jsonr.</span>parse
+            <span class="apidocSignatureSpan">(text, reviver)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.jsonr.revealReferences">
+            function <span class="apidocSignatureSpan">jsonr.</span>revealReferences
+            <span class="apidocSignatureSpan">(text)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.jsonr.stringify">
+            function <span class="apidocSignatureSpan">jsonr.</span>stringify
+            <span class="apidocSignatureSpan">(value, replacer, space)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.jsonr" id="apidoc.module.jsonr">module jsonr</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.jsonr.isReference" id="apidoc.element.jsonr.isReference">
+        function <span class="apidocSignatureSpan">jsonr.</span>isReference
+        <span class="apidocSignatureSpan">(value)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">isReference = function (value) {
+    var c;
+    if (typeof value === &#x27;string&#x27; &#x26;&#x26; value.length === 1) {
+        c = value.charCodeAt(0);
+        return c &#x3e;= 0xE000 &#x26;&#x26; c &#x3c;= 0xF8FF;
+    }
+    return false;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            multiple references to the same object instance (even circular references),
+            it only encodes the first occurrence and put a reference for all others in
+            the form of: &#x22;\uXXXX&#x22; (with XXXX = (index of instance + 0xE000)).
+
+            See implementation for detail.
+
+
+      - JSONR.<span class="apidocCodeKeywordSpan">isReference</span>(value)
+
+value        any JavaScript value.
+
+This method returns true if the value is a String of length 1 with a
+unicode character in the range \uE000 - \uF8FF (ie. UTF8 private usage area).
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.jsonr.parse" id="apidoc.element.jsonr.parse">
+        function <span class="apidocSignatureSpan">jsonr.</span>parse
+        <span class="apidocSignatureSpan">(text, reviver)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">parse = function (text, reviver) {
+    var value = JSON.parse(text, reviver);
+    dy = [];
+    try {
+        value = unref(value);
+    } finally {
+        dy = null;
+    }
+    return value;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+    break;
+}
+
+return value;
+}
+
+exports.parse = function (text, reviver) {
+var value = JSON.<span class="apidocCodeKeywordSpan">parse</span>(text, reviver);
+dy = [];
+try {
+    value = unref(value);
+} finally {
+    dy = null;
+}
+return value;
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.jsonr.revealReferences" id="apidoc.element.jsonr.revealReferences">
+        function <span class="apidocSignatureSpan">jsonr.</span>revealReferences
+        <span class="apidocSignatureSpan">(text)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">revealReferences = function (text) {
+    var begins = /&#x22;(?:[^&#x22;\\]|\\.)*&#x22;|[\[\{]/g,
+        indexes = /\&#x22;[\uE000-\uF8FF]\&#x22;/g,
+        index = 0;
+
+    text = begins.test(text) ? text.replace(begins, function (s) {
+        if (s.charAt(0) !== &#x27;&#x22;&#x27;) {
+            s = &#x27;@&#x27; + index + s;
+            index += 1;
+        }
+        return s;
+    }) : text;
+
+    return indexes.test(text) ? text.replace(indexes, function (i) {
+        return &#x27;&#x22;@&#x27; + (i.charCodeAt(1) - 0xE000) + &#x27;&#x22;&#x27;;
+    }) : text;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+  value        any JavaScript value.
+
+  This method returns true if the value is a String of length 1 with a
+  unicode character in the range \uE000 - \uF8FF (ie. UTF8 private usage area).
+
+
+      - JSONR.<span class="apidocCodeKeywordSpan">revealReferences</span>(text)
+
+text        a JSON text encoded by the JSONR.stringify method.
+
+This method returns its parameter with all references replaced by human
+readable text (eg. &#x22;\uE000&#x22; -&#x3e; &#x22;^0&#x22;, &#x22;\uE001&#x22; -&#x3e; &#x22;^1&#x22;, ...,
+&#x22;\uE00A&#x22; -&#x3e; &#x22;^10&#x22;, etc.)
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.jsonr.stringify" id="apidoc.element.jsonr.stringify">
+        function <span class="apidocSignatureSpan">jsonr.</span>stringify
+        <span class="apidocSignatureSpan">(value, replacer, space)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">stringify = function (value, replacer, space) {
+    var i, s;
+
+    indent = &#x27;&#x27;;
+    if (typeof space === &#x27;number&#x27;) {
+        for (i = 0; i &#x3c; space; i += 1) {
+            indent += &#x27; &#x27;;
+        }
+    } else if (typeof space === &#x27;string&#x27;) {
+        indent = space;
+    }
+
+    rep = null;
+    if (replacer) {
+        if (typeof replacer === &#x27;function&#x27;) {
+            rep = replacer;
+        } else if (Object.prototype.toString.apply(replacer) === &#x27;[object Array]&#x27;) {
+            for (i = 0; i &#x3c; replacer.length; i += 1) {
+                if (typeof replacer[i] !== &#x27;string&#x27;) {
+                    throw new Error(&#x27;JSONR.stringify: illegal replacer&#x27;);
+                }
+            }
+            rep = replacer.concat();
+        } else {
+            throw new Error(&#x27;JSONR.stringify: illegal replacer&#x27;);
+        }
+    }
+
+    gap = &#x27;&#x27;;
+    dy = [];
+
+    try {
+        s = str(&#x27;&#x27;, {&#x27;&#x27;: value});
+    } finally {
+        gap = null;
+        indent = null;
+        rep = null;
+        dy = null;
+    }
+
+    return s;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
+    This file creates a global JSONR object containing four methods: stringify,
+    isReference, revealReferences and parse:
+
+
+      - JSONR.<span class="apidocCodeKeywordSpan">stringify</span>(value, replacer, space)
+
+value       any JavaScript value, usually an object or array.
+
+replacer    an optional parameter that determines how object
+            values are stringified for objects. It can be a
+            function or an array of strings.
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
